@@ -6,6 +6,9 @@ import struct
 from threading import Event, Thread
 from util import *
 
+sock = ''
+connection = ''
+addr = ''
 
 logger = logging.getLogger('client')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -13,6 +16,8 @@ STOP = Event()
 
 
 def accept(port):
+    global connection
+    global addr
     logger.info("accept %s", port)
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -22,30 +27,34 @@ def accept(port):
     s.settimeout(5)
     while not STOP.is_set():
         try:
-            conn, addr = s.accept()
+            connection, addr = s.accept()
+            logger.info(
+                "First accepted the connection {}, addr {}".format(connection, addr))
+            STOP.set()
         except socket.timeout:
             continue
-        else:
-            logger.info("Accept %s connected!", port)
-            # STOP.set()
 
 
 def connect(local_addr, addr):
     logger.info("connect from %s to %s", local_addr, addr)
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-    s.bind(local_addr)
+    global sock
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+    sock.bind(local_addr)
     while not STOP.is_set():
         try:
-            s.connect(addr)
+            sock.connect(addr)
+            print("Sucessful connecting {} -- {}".format(local_addr, addr))
+            STOP.set()
         except socket.error:
             continue
         # except Exception as exc:
         #     logger.exception("unexpected exception encountered")
         #     break
         else:
-            logger.info("connected from %s to %s success!", local_addr, addr)
+            pass
+            # logger.info("connected from %s to %s success!", local_addr, addr)
             # STOP.set()
 
 
@@ -79,7 +88,6 @@ def main(host='54.187.46.146', port=5005):
     for name in sorted(threads.keys()):
         logger.info('start thread %s', name)
         threads[name].start()
-
     while threads:
         keys = list(threads.keys())
         for name in keys:
@@ -89,6 +97,10 @@ def main(host='54.187.46.146', port=5005):
                 continue
             if not threads[name].is_alive():
                 threads.pop(name)
+    if connection and addr:
+        return connection
+    else:
+        return sock
 
 
 if __name__ == '__main__':

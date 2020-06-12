@@ -33,6 +33,9 @@ def accept(port):
             STOP.set()
         except socket.timeout:
             continue
+        else:
+            logger.info("Accepted success! %s", addr)
+            STOP.set()
 
 
 def connect(local_addr, addr):
@@ -46,16 +49,14 @@ def connect(local_addr, addr):
         try:
             sock.connect(addr)
             print("Sucessful connecting {} -- {}".format(local_addr, addr))
-            STOP.set()
         except socket.error:
             continue
         # except Exception as exc:
         #     logger.exception("unexpected exception encountered")
         #     break
         else:
-            pass
-            # logger.info("connected from %s to %s success!", local_addr, addr)
-            # STOP.set()
+            logger.info("connected from %s to %s success!", local_addr, addr)
+            STOP.set()
 
 
 def main(host='54.187.46.146', port=5005):

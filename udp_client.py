@@ -18,6 +18,7 @@ def main(host='127.0.0.1', port=9999):
         sock.sendto(b'0', addr)
         data, addr = sock.recvfrom(1024)
         print('client received: {} {}'.format(addr, data))
+        return sock
 
 
 if __name__ == '__main__':

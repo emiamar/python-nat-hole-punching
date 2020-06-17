@@ -11,14 +11,14 @@ def main(host='127.0.0.1', port=9999):
                          socket.SOCK_DGRAM) # UDP
     sock.sendto(b'0', (host, port))
 
-    while True:
-        data, addr = sock.recvfrom(1024)
-        print('client received: {} {}'.format(addr, data))
-        addr = msg_to_addr(data)
-        sock.sendto(b'0', addr)
-        data, addr = sock.recvfrom(1024)
-        print('client received: {} {}'.format(addr, data))
-        return sock
+    data, ran_server = sock.recvfrom(1024)
+    addr = msg_to_addr(data)
+    print(f'Received: Peer {addr} from RS {ran_server}')
+    sock.sendto(b'Mac', addr)
+    data, addr = sock.recvfrom(1024)
+    print(f'Received data from peer {addr}')
+    print(f'Data received : {data}')
+    return sock, addr
 
 
 if __name__ == '__main__':

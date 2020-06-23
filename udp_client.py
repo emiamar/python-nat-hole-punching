@@ -10,15 +10,18 @@ def main(host='127.0.0.1', port=9999):
     sock = socket.socket(socket.AF_INET, # Internet
                          socket.SOCK_DGRAM) # UDP
     sock.sendto(b'0', (host, port))
-
+    sock.settimeout(10)
     while True:
         data, addr = sock.recvfrom(1024)
         print('client received: {} {}'.format(addr, data))
         addr = msg_to_addr(data)
-        sock.sendto(b'0', addr)
+        try:
+            sock.sendto(b'Mac', addr)
+        except socket.error:
+            return sock, addr
         data, addr = sock.recvfrom(1024)
         print('client received: {} {}'.format(addr, data))
-        return sock
+        return sock, addr
 
 
 if __name__ == '__main__':

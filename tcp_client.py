@@ -1,8 +1,11 @@
 #!/usr/bin/env python
-import sys
+# import sys
+
 import logging
 import socket
-import struct
+# import struct
+from concurrent import futures
+
 from threading import Event, Thread
 from util import *
 
@@ -45,6 +48,7 @@ def connect(local_addr, addr):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
     sock.bind(local_addr)
+    sock.settimeout(5)
     while not STOP.is_set():
         try:
             sock.connect(addr)
@@ -59,7 +63,7 @@ def connect(local_addr, addr):
             STOP.set()
 
 
-def main(host='54.187.46.146', port=5005):
+def main(host='45.33.117.94', port=5005):
     sa = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sa.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sa.connect((host, port))
@@ -81,23 +85,28 @@ def main(host='54.187.46.146', port=5005):
     )
 
     threads = {
-        '0_accept': Thread(target=accept, args=(priv_addr[1],)),
-        '1_accept': Thread(target=accept, args=(client_pub_addr[1],)),
+        '0_accept': Thread(target=accept, args=(client_pub_addr[1],)),
+        '1_accept': Thread(target=accept, args=(priv_addr[1],)),
         '2_connect': Thread(target=connect, args=(priv_addr, client_pub_addr,)),
-        '3_connect': Thread(target=connect, args=(priv_addr, client_priv_addr,)),
+        # '3_connect': Thread(target=connect, args=(priv_addr, client_priv_addr,)),
     }
-    for name in sorted(threads.keys()):
-        logger.info('start thread %s', name)
-        threads[name].start()
-    while threads:
-        keys = list(threads.keys())
-        for name in keys:
-            try:
-                threads[name].join(1)
-            except TimeoutError:
-                continue
-            if not threads[name].is_alive():
-                threads.pop(name)
+    # for name in sorted(threads.keys()):
+    #     logger.info('start thread %s', name)
+    #     threads[name].start()
+    # while threads:
+    #     keys = list(threads.keys())
+    #     for name in keys:
+    #         try:
+    #             threads[name].join(1)
+    #         except TimeoutError:
+    #             continue
+    #         if not threads[name].is_alive():
+    #             threads.pop(name)
+    with futures.ThreadPoolExecutor(max_workers=4) as executor:
+        executor.submit(accept, (client_pub_addr[1],))
+        executor.submit(accept, (priv_addr[1],))
+        executor.submit(connect, (priv_addr, client_pub_addr,))
+
     if connection and addr:
         return connection
     else:
@@ -106,4 +115,4 @@ def main(host='54.187.46.146', port=5005):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, message='%(asctime)s %(message)s')
-    main(*addr_from_args(sys.argv))
+    main()

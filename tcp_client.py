@@ -9,9 +9,9 @@ from concurrent import futures
 from threading import Event, Thread
 from util import *
 
-sock = ''
-connection = ''
-addr = ''
+# sock = ''
+# connection = ''
+# addr = ''
 
 logger = logging.getLogger('client')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -106,10 +106,10 @@ def main(host='45.33.117.94', port=5005):
         executor.submit(accept, (client_pub_addr[1],))
         executor.submit(accept, (priv_addr[1],))
         executor.submit(connect, (priv_addr, client_pub_addr,))
-
+        executor.submit(connect, (priv_addr, client_priv_addr,))
     if connection and addr:
         return connection
-    else:
+    if sock:
         return sock
 
 
